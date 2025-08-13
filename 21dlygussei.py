@@ -47,23 +47,44 @@ def main() -> int:
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
+    font = pygame.font.Font(None, 24)
 
     deck_images = load_deck()
+    hand_images = deck_images[:5]
+    draw_pile = deck_images[5:]
+
     cards: list[DraggableCard] = []
     x = 50
-    for image in deck_images[:5]:
+    for image in hand_images:
         cards.append(DraggableCard(image, (x, HEIGHT - image.get_height() - 20)))
-        x += 110
+        x += image.get_width() + 20
+    next_x = x
+
+    deck_rect = pygame.Rect(WIDTH - 80, HEIGHT - 120, 60, 90)
 
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if deck_rect.collidepoint(event.pos) and draw_pile:
+                    image = draw_pile.pop()
+                    cards.append(
+                        DraggableCard(
+                            image, (next_x, HEIGHT - image.get_height() - 20)
+                        )
+                    )
+                    next_x += image.get_width() + 20
             for card in cards:
                 card.handle_event(event)
 
         screen.fill((0, 100, 0))
+        pygame.draw.rect(screen, (50, 50, 50), deck_rect)
+        count_text = font.render(str(len(draw_pile)), True, (255, 255, 255))
+        screen.blit(
+            count_text, count_text.get_rect(center=deck_rect.center)
+        )
         for card in cards:
             card.draw(screen)
         pygame.display.flip()
